@@ -26,6 +26,8 @@ format:
     highlight-style: nord
 ---
 
+Collaborator: Jenna Landy
+
 ## Question 2
 
 :::{.callout-note title="Answer"}
@@ -135,7 +137,7 @@ c) This phenomenon where a trend appears when stratified but then reverses when 
 
 :::{.callout-note title="Answer"}
 
-Clearly, we see that across all sample sizes, we have higher power rejecting the strong null than the weak null. This coincides with the statement that if there is evidence against Neyman's null, then there should also be evidence against Fisher's -- in other words, it is "easier" to reject Fisher's strong null. We also see that as the sample size increases, so does the power against both nulls (approaching 1), which is again to be expected as both tests are consistent.
+We would expect that we would have higher power in rejecting the strong null vs. the weak null, but (perhaps) interestingly, this is not what we see. Let's think about this closer. Imagine the set of distributions of satisfying the strong null vs. the set of distributions satisfying the weak null. Clearly, the former lies entirely within the latter. Hence, if the true distribution satisfied the weak null but not the strong null, then we would surely expect higher power in rejecting the strong null vs. the weak null. This would be the case if for half the individuals there was a positive treatment effect and then for the other half there was a negative treatment effect such that the ATE was equal to 0. In this case, any reasonable test would be consistent (have asymptotic power = 1) for rejecting the strong null, but not necessarily for rejecting the weak null (as the weak null holds). In this scenario, we would expect to see the power against the strong null to be greater than the weak null (which aligns with our a priori expectations). However, this is the not the case we are dealing with. For this problem, the true distribution lies outside the distributions satisfying both the weak null and the strong null (as the ATE is non-zero), and hence we would expect any reasonable tests against the weak null and the strong null to be consistent, which is what we see in the simulations. Hence, any differences in power for a given sample size would be due to differences in the variability associated with the test statistic / the specific testing procedure. Given the simulation results, it seems that in this case, the variance associated with the difference in means estimator under the permutation distribution is greater than Neyman's variance estimator, which was unexpected.
 
 ```{r, cache = TRUE}
 n1 <- c(10, 25, 50, 100, 250)
@@ -146,7 +148,7 @@ B <- 10000
 
 strong_null_reject <- matrix(data = NA, ncol = length(n1), nrow = nsim)
 weak_null_reject <- matrix(data = NA, ncol = length(n1), nrow = nsim)
-set.seed(1)
+set.seed(999)
 for (k in 1:length(n1)) {
   Y1 <- rnorm(n[k], mean = 1/10, sd = sqrt(1/16))
   Y0 <- rnorm(n[k], mean = 0, sd = sqrt(1/16))
@@ -156,9 +158,9 @@ for (k in 1:length(n1)) {
     Y <- A * Y1 + (1 - A) * Y0
     dif_mean <- (1/n1[k]) * sum(A * Y) - (1/n0[k]) * sum((1 - A) * Y)
     var_dif_mean <- (1/n1[k]) * (1/(n1[k] - 1)) * 
-      sum((Y - (1/n1[k]) * sum(A * Y))^2) + 
+      sum(A*(Y - (1/n1[k]) * sum(A * Y))^2) + 
       (1/n0[k]) * (1/(n0[k] - 1)) * 
-      sum((Y - (1/n0[k]) * sum((1 - A) * Y))^2)
+      sum((1-A)*(Y - (1/n0[k]) * sum((1 - A) * Y))^2)
     # generate null distribution
     dif_mean_null <- rep(NA, times = B)
     for (j in 1:B) {
@@ -212,18 +214,21 @@ which implies (by substitution) that
   \frac{\beta m}{n} &= \frac{1}{n} \sum_{i = 1}^n A_i Y_i - \frac{\alpha m}{n}\\
   \beta &= \frac{1}{m} \sum_{i = 1}^n A_i Y_i - \alpha\\
   \beta \left( \frac{n - m}{n} \right) &= \bar{Y_1} - \bar(Y)\\
-  \hat{\beta} &= \frac{n}{n-m} \left( \bar{Y_1} - \bar{Y} \right)
+  \hat{\beta} &= \frac{n}{n-m} \left( \bar{Y_1} - \bar{Y} \right)\\
+  \hat{\beta} &= \frac{n}{n-m} \left( \bar{Y_1} - \frac{m}{n} \bar{Y_1} - \frac{n - m}{n} \bar{Y_0} \right)\\
+  \hat{\beta} &= \bar{Y_1} - \bar{Y_0}\\
 \end{align*}
-and we can resubstitute this expression for $\hat{\alpha}$.
-
-b) We can show that $\hat{\beta}$ is "unbiased" for the SATE, which in some sense suggests validity.
+where
 \begin{align*}
-E(\hat{\beta}) &= \frac{n}{n - m} E( \bar{Y_1} - \bar{Y})\\
-&= \frac{n}{n - m} \left( \frac{1}{m} \sum_{i = 1}^n E(A_i) Y_i(1) - E\left( \frac{1}{n} \sum_{i = 1}^n \left(A_i Y_i + (1 - A_i) Y_i \right) \right) \right)\\
-&= \frac{n}{n-m} \left( \frac{1}{n} \sum_{i = 1}^n Y_i(1) - \frac{m}{n^2} \sum_{i = 1}^n Y_i(1) - \frac{n-m}{n^2} \sum_{i = 1}^n Y_i(0) \right)\\
-&= \frac{n}{n-m} \sum_{i = 1}^n \left( Y_i(1) - Y_i(0) \right)\\
-&= \theta^{SATE}
+\bar{Y_1} = \frac{1}{m} \sum_{i = 1}^n A_i Y_i, \qquad \bar{Y_0} = \frac{1}{n-m} \sum_{i = 1}^n (1 - A_i) Y_i
 \end{align*}
+and we can resubstitute this expression for $\hat{\alpha}$ to obtain
+\begin{align*}
+\hat{\alpha} &= \frac{m}{n} \bar{Y_1} + \frac{n-m}{n} \bar{Y_0} - \frac{m}{n} \left(\bar{Y_1} - \bar{Y_0} \right)\\
+&= \bar{Y_0}
+\end{align*}
+
+b) Clearly, we have that $\hat{\beta}$ is equivalent to our standard difference of means estimator, which as we have discussed in class is a "valid" estimator of the ATE.
 
 :::
 
